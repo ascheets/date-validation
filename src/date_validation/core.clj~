@@ -1,0 +1,215 @@
+(ns date-validation.core)
+
+(import '(javax.swing JOptionPane))
+
+(use '[clojure.string :only (join split)])
+
+(defrecord Date[day month year])
+
+(defn abs [n] (max n (- n)))
+
+(def daysInMonths {1 31 2 28 3 31 4 30 5 31 6 30 7 31 8 31 9 30 10 31 11 30 12 31})
+
+(def daysInYear 365)
+(def daysInLeap 366)
+
+(defn leapYear [year]
+   
+  ;;is it divisible by 4?
+  (if (= (mod year 4) 0)
+   (do
+
+     ;;if divisible by 4, is it divisible by 100?
+     (if (= (mod year 100) 0)
+
+       ;;if divisible by 100, is it also divisible by 400?
+       (if (= (mod year 400) 0)
+
+         ;;if divisible by 400 and 100, then leap year
+         true
+
+         ;;if not, not leap year
+         false
+         )
+
+       ;;if divisibly by 4 but not by 100, leap year
+       true
+       )
+     )
+    ;;if not divisible by 4, not leap year,
+   false
+
+    )
+)
+
+(defn validMonth [month]
+
+  (cond
+    (<= month 0) false
+    (> month 12) false
+    :else true
+    )
+)
+
+(defn validYear [year]
+
+  (cond 
+    (<= year 0) false
+    
+    :else true
+    )
+)
+
+(defn validDay [date]
+
+  (def splitDate
+    (split date #"/")
+    )
+
+  (def month (. Integer parseInt (nth splitDate 0)))
+  (def day (. Integer parseInt (nth splitDate 1)))
+  (def year (. Integer parseInt (nth splitDate 2)))
+  
+  (if (and (validMonth month) (validYear year))
+    ;;if the month and year are valid
+    (do
+      (if (and (leapYear year) (= month 2))
+        ;;if leap year and february
+        (do
+          ;;(println "leap year, feb")
+          ;; if valid day
+          (cond
+            (<= day 0) false
+            (> day 29) false
+            :else true
+            )
+          )
+        ;;else
+        (do
+          ;;if not leap year
+          ;;(println "not leap year")
+          (cond
+            (<= day 0) false
+            (> day (daysInMonths month)) false
+            :else true
+            )
+          )
+        )
+      )
+    )
+  )
+
+
+
+(defn years-between [year1 year2]
+
+  (loop [result []
+         current-num year1]
+    (if (> current-num year2)
+      result
+      (recur (conj result current-num) (inc current-num))))
+)
+
+(defn count-leap-years [all-years]
+
+  (let [leap-years (filter leapYear all-years)]
+
+    ;;return the number of leap years
+    (count leap-years)    
+    )
+)
+
+(defn get-days-left [date]
+
+  (def splitDate
+    (split date #"/")
+    )
+
+  (def month (. Integer parseInt (nth splitDate 0)))
+  (def day (. Integer parseInt (nth splitDate 1)))
+  (def year (. Integer parseInt (nth splitDate 2)))
+
+  (loop [result 0
+         current-month month]
+    (if (> current-month 12)
+      (- result day)
+      (recur (+ result (daysInMonths current-month)) (inc current-month)))
+
+    )
+
+)
+
+(defn get-days-past [date]
+
+  (def splitDate
+    (split date #"/")
+    )
+
+  (def month (. Integer parseInt (nth splitDate 0)))
+  (def day (. Integer parseInt (nth splitDate 1)))
+  (def year (. Integer parseInt (nth splitDate 2)))
+
+  (loop [result 0
+         current-month 1]
+    (if (= current-month month)
+      (+ result day)
+      (recur (+ result (daysInMonths current-month)) (inc current-month)))
+
+    )
+
+
+)
+
+(defn days-in-between [date1 date2]
+
+  ;;are these valid dates?
+  (if (and (validDay date1) (validDay date2))
+    ;;if valid dates
+    (do
+
+      ;;read in the dates
+      (def splitDate1
+        (split date1 #"/")
+        )
+
+      (def splitDate2
+        (split date2 #"/")
+        )
+
+      (def month1 (. Integer parseInt (nth splitDate1 0)))
+      (def day1 (. Integer parseInt (nth splitDate1 1)))
+      (def year1 (. Integer parseInt (nth splitDate1 2)))
+
+      (def month2 (. Integer parseInt (nth splitDate2 0)))
+      (def day2 (. Integer parseInt (nth splitDate2 1)))
+      (def year2 (. Integer parseInt (nth splitDate2 2)))
+
+      ;;are the years equal
+
+      ;;which year is later?
+      (def later (max year1 year2))
+      (def earlier (min year1 year2))
+
+      (def years (years-between year1 year2))
+      (def leap-years (count-leap-years years))
+
+      (def days-left-earlier (get-days-left date1))
+      (def days-past-later (get-days-past date2))
+
+      (def num-days (+ (* 365 (- later (+ earlier 1))) leap-years days-past-later days-left-earlier))
+      (println num-days)
+      
+
+      )
+    ;;otherwise return nil
+    nil
+    )
+  
+
+)
+
+
+;;code for the sake of testing
+
+(def dates '("4/4/2015" "1/4/2015" "4/6/2015" "2/29/2015" "2/29/2016" "11/1/1973"
+               "4/31/2006" ))
