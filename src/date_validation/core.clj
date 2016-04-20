@@ -8,6 +8,10 @@
 
 (defn abs [n] (max n (- n)))
 
+(defn split-date [date-string]
+  (split date-string #"/")
+)
+
 (def daysInMonths {1 31 2 28 3 31 4 30 5 31 6 30 7 31 8 31 9 30 10 31 11 30 12 31})
 (def monthNames {1 "January"
                  2 "February"
@@ -78,36 +82,34 @@
 ;;is function valid date?
 (defn validDay [date]
 
-  (def splitDate
-    (split date #"/")
-    )
+  (let [splitDate (split-date date)
+        month (. Integer parseInt (nth splitDate 0))
+        day (. Integer parseInt (nth splitDate 1))
+        year (. Integer parseInt (nth splitDate 2))]
 
-  (def month (. Integer parseInt (nth splitDate 0)))
-  (def day (. Integer parseInt (nth splitDate 1)))
-  (def year (. Integer parseInt (nth splitDate 2)))
-  
-  (if (and (validMonth month) (validYear year))
-    ;;if the month and year are valid
-    (do
-      (if (and (leapYear year) (= month 2))
-        ;;if leap year and february
-        (do
-          ;;(println "leap year, feb")
-          ;; if valid day
-          (cond
-            (<= day 0) false
-            (> day 29) false
-            :else true
+    (if (and (validMonth month) (validYear year))
+      ;;if the month and year are valid
+      (do
+        (if (and (leapYear year) (= month 2))
+          ;;if leap year and february
+          (do
+            ;;(println "leap year, feb")
+            ;; if valid day
+            (cond
+              (<= day 0) false
+              (> day 29) false
+              :else true
+              )
             )
-          )
-        ;;else
-        (do
-          ;;if not leap year
-          ;;(println "not leap year")
-          (cond
-            (<= day 0) false
-            (> day (daysInMonths month)) false
-            :else true
+          ;;else
+          (do
+            ;;if not leap year
+            ;;(println "not leap year")
+            (cond
+              (<= day 0) false
+              (> day (daysInMonths month)) false
+              :else true
+              )
             )
           )
         )
@@ -138,44 +140,37 @@
 ;;gets days left in a year from a certain date
 (defn get-days-left [date]
 
-  (def splitDate
-    (split date #"/")
+  (let [splitDate (split-date date)
+        month (. Integer parseInt (nth splitDate 0))
+        day (. Integer parseInt (nth splitDate 1))
+        year (. Integer parseInt (nth splitDate 2))]
+
+    (loop [result 0
+           current-month month]
+      (if (> current-month 12)
+        (- result day)
+        (recur (+ result (daysInMonths current-month)) (inc current-month)))
+
+      )
     )
-
-  (def month (. Integer parseInt (nth splitDate 0)))
-  (def day (. Integer parseInt (nth splitDate 1)))
-  (def year (. Integer parseInt (nth splitDate 2)))
-
-  (loop [result 0
-         current-month month]
-    (if (> current-month 12)
-      (- result day)
-      (recur (+ result (daysInMonths current-month)) (inc current-month)))
-
-    )
-
 )
 
 ;;gets days past in a year from a certain date
 (defn get-days-past [date]
 
-  (def splitDate
-    (split date #"/")
+  (let [splitDate (split-date date)
+        month (. Integer parseInt (nth splitDate 0))
+        day (. Integer parseInt (nth splitDate 1))
+        year (. Integer parseInt (nth splitDate 3))]
+
+    (loop [result 0
+           current-month 1]
+      (if (= current-month month)
+        (+ result day)
+        (recur (+ result (daysInMonths current-month)) (inc current-month)))
+
+      )
     )
-
-  (def month (. Integer parseInt (nth splitDate 0)))
-  (def day (. Integer parseInt (nth splitDate 1)))
-  (def year (. Integer parseInt (nth splitDate 2)))
-
-  (loop [result 0
-         current-month 1]
-    (if (= current-month month)
-      (+ result day)
-      (recur (+ result (daysInMonths current-month)) (inc current-month)))
-
-    )
-
-
 )
 
 ;;gets days in between two particular dates
@@ -186,39 +181,35 @@
     ;;if valid dates
     (do
 
-      ;;read in the dates
-      (def splitDate1
-        (split date1 #"/")
+      (let [splitDate1 (split-date date1)
+            splitDate2 (split-date date2)
+
+            month1 (. Integer parseInt (nth splitDate1 0))
+            day1 (. Integer parseInt (nth splitDate1 1))
+            year1 (. Integer parseInt (nth splitDate1 2))
+
+            month2 (. Integer parseInt (nth splitDate2 0))
+            day2 (. Integer parseInt (nth splitDate2 1))
+            year2 (. Integer parseInt (nth splitDate2 2))
+
+            ;;are the years equal
+
+            ;;which year is later?
+            later (max year1 year2)
+            earlier (min year1 year2)
+
+            years (years-between year1 year2)
+
+            leap-years (count-leap-years years)
+
+            days-left-earlier (get-days-left date1)
+            
+            days-past-later (get-days-past date2)
+
+            num-days (+ (* 365 (- later (+ earlier 1))) leap-years days-past-later days-left-earlier)]
+
+        (println num-days)
         )
-
-      (def splitDate2
-        (split date2 #"/")
-        )
-
-      (def month1 (. Integer parseInt (nth splitDate1 0)))
-      (def day1 (. Integer parseInt (nth splitDate1 1)))
-      (def year1 (. Integer parseInt (nth splitDate1 2)))
-
-      (def month2 (. Integer parseInt (nth splitDate2 0)))
-      (def day2 (. Integer parseInt (nth splitDate2 1)))
-      (def year2 (. Integer parseInt (nth splitDate2 2)))
-
-      ;;are the years equal
-
-      ;;which year is later?
-      (def later (max year1 year2))
-      (def earlier (min year1 year2))
-
-      (def years (years-between year1 year2))
-      (def leap-years (count-leap-years years))
-
-      (def days-left-earlier (get-days-left date1))
-      (def days-past-later (get-days-past date2))
-
-      (def num-days (+ (* 365 (- later (+ earlier 1))) leap-years days-past-later days-left-earlier))
-      (println num-days)
-      
-
       )
     ;;otherwise return nil
     nil
